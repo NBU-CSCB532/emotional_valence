@@ -1,0 +1,9 @@
+nltk
+openpyxl
+pandas
+python-docx
+scipy
+spacy
+xlrd
+xlsxwriter
+xlwt
