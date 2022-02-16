@@ -3,7 +3,7 @@ from xlrd import open_workbook
 
 class ExcelReader(object):
     def __init__(self, filename):
-        self.work_book =  open_workbook(filename)
+        self.work_book = open_workbook(filename)
         self.rows = self._get_rows()
         self.mapping = dict()
         self.reverse_mapping = dict()

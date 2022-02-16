@@ -22,7 +22,7 @@ class EntityCleaner:
     # Iterate through files in the directory.
     def __init__(self):
         for word in self.keyWords:
-            input_path = os.path.abspath(os.path.join(self.my_path, "..\\..\Texts as found input\\" + word))
+            input_path = os.path.abspath(os.path.join(self.my_path, '..', '..', 'Texts as found input', word))
             textFiles = os.listdir(input_path)
             for file in textFiles:
                 if file.find(".docx") == -1:
@@ -129,7 +129,7 @@ def saveEditedText(self, text, fileName):
         paragraph += character
     newDoc.save(
         os.path.abspath(
-            os.path.join(os.path.abspath(os.path.dirname(__file__)), "..\\..\\TextsFiltered–protected", fileName)))
+            os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', '..', 'TextsFiltered–protected', fileName)))
 
 
 def saveStopWords(self, text, fileName):
@@ -170,13 +170,13 @@ def saveStopWords(self, text, fileName):
                 row += 1
 
     workbook.save(filename=os.path.abspath(
-        os.path.join(os.path.abspath(os.path.dirname(__file__)), "..\\..\\Stop words", fileName[:-5]) + '.xlsx'))
+        os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', '..', 'Stop words', fileName[:-5]) + '.xlsx'))
 
 
 def merge_stop_words_files(self):
-    stop_words_path = os.path.abspath(os.path.join(self.my_path, "..\\..\\Stop words"))
+    stop_words_path = os.path.abspath(os.path.join(self.my_path, '..', '..', 'Stop words'))
     stop_words_excel_path = os.path.join(stop_words_path, 'Stop_words.xlsx')
-    old_stop_words_path = os.path.abspath(os.path.join(self.my_path, "..\\..\\Dictionary"))
+    old_stop_words_path = os.path.abspath(os.path.join(self.my_path, '..', '..', 'Dictionary'))
     old_stop_words = os.path.join(old_stop_words_path, 'Dictionary Stop Words.xlsx')
     df = pd.DataFrame()
     for f in os.listdir(stop_words_path):
@@ -197,6 +197,6 @@ def merge_stop_words_files(self):
 
 
     data.to_excel(os.path.abspath(
-        os.path.join(os.path.abspath(os.path.dirname(__file__)), "..\\..\\Dictionary",
+        os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', '..', 'Dictionary',
                      'Dictionary Stop Words.xlsx')),
         index=False)

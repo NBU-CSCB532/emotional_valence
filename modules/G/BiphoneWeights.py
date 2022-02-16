@@ -12,7 +12,7 @@ class BiphoneWeights():
         conn.create_function('regexp', 2, lambda x, y: 1 if re.search(x, y) else 0)
 
         my_path = os.path.abspath(os.path.dirname(__file__))
-        step_2_path = os.path.abspath(os.path.join(my_path, '..\\F '))
+        step_2_path = os.path.abspath(os.path.join(my_path, '..', 'F'))
         step_2 = os.path.join(step_2_path, 'Biphone Step 2.xlsx')
 
         cur = conn.cursor()
