@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
+
+    <link rel="stylesheet" href="{{url_for('static', filename='/css/bootstrap-datepicker.min.css')}}">
+
+
+    <title>Sentiments</title>
+
+    <style>
+      .nav-tabs > li {
+        float:none;
+        display:inline-block;
+        zoom:1;
+      }
+
+      .nav-tabs {
+        text-align: center;
+      }
+
+      #results {
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col-2">
+        </div>
+        <div class="col-8">
+          <center>
+            <h1><a href="/" style="color: black; text-decoration: none">Sentiment analysis</a></h1>
+          </center>
+          <hr/>
+          <div id="content" style="margin-top: 45px" >
+            <ul class="nav nav-tabs justify-content-center" id="tabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link {% if search_type == 'tweets' %} active {% endif %}" id="twitter-tab" data-bs-toggle="tab" data-bs-target="#twitter" type="button" role="tab" aria-controls="twitter" aria-selected="true">Twitter</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link {% if search_type == 'news' %} active {% endif %}" id="news-tab" data-bs-toggle="tab" data-bs-target="#news" type="button" role="tab" aria-controls="news" aria-selected="false">News</button>
+              </li>
+            </ul>
+            <div class="tab-content" id="tab-content" style="padding-top: 45px">
+              <div class="tab-pane fade {% if search_type == 'tweets' %} show active {% endif %}" id="twitter" role="tabpanel" aria-labelledby="twitter-tab">
+                <form id="twitter-form" method="POST" action="/search-tweets">
+                  <div class="row mb-3">
+                    <label for="twitter-query" class="col-sm-2 col-form-label">Query</label>
+                    <div class="col-sm-8">
+                      <input name="query" type="text" class="form-control" id="twitter-query" aria-describedby="twitter-query" value="{% if search_type == 'tweets' and form is defined %} {{ form.get('query') }} {% endif %}">
+                      <div id="twitter-query" class="form-text">Type in keywords for which to search tweets.</div>
+                    </div>
+                    <div class="col-sm-2">
+                      <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+                  </div>
+                </form>
+                {% if tweets is defined and tweets|length > 0 %}
+                  <div id="results">
+                    <table class="table" id="statistics">
+                      <thead>
+                        <tr>
+                          <th scope="col">Mean score</th>
+                          <th scope="col">Median score</th>
+                          <th scope="col">Standard deviation</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>{{ mean_sentiment_score }}</td>
+                          <td>{{ median_sentiment_score }}</td>
+                          <td>{{ std_dev_sentiment_scores }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+
+                    <table id="tweets-found" class="display">
+                      <thead>
+                        <tr>
+                          <th>Tweet ID</th>
+                          <th>Timestamp</th>
+                          <th>Text</th>
+                          <th>Score</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% if tweets %}
+                          {% for tweet in tweets %}
+                            <tr>
+                              <td>
+                                {{ tweet.id }}
+                              </td>
+                              <td>
+                                {{ tweet.created_at.strftime('%Y-%m-%d') }}
+                              </td>
+                              <td>
+                                {{ tweet.text }}
+                              </td>
+                              <td>
+                                {{ sentiment_scores.get(tweet.id) }}
+                              </td>
+                            </tr>
+                          {% endfor %}
+                        {% endif %}
+                      </tbody>
+                    </table>
+                  </div>
+                {% endif %}
+              </div>
+              <div class="tab-pane fade {% if search_type == 'news' %} show active {% endif %}" id="news" role="tabpanel" aria-labelledby="news-tab">
+                <form id="news-form" method="POST" action="/search-news">
+                  <div class="row mb-3">
+                    <label for="news-query" class="col-sm-2 col-form-label">Query</label>
+                    <div class="col-sm-8">
+                      <input name='query' type="text" class="form-control" id="news-query" aria-describedby="news-query" value="{% if search_type == 'news' %} {{ form.get('query') }} {% endif %}">
+                      <div id="news-query" class="form-text">The query can be text or a single URL.</div>
+                    </div>
+
+                    <div class="col-sm-2">
+                      <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+                  </div>
+
+                  <div class="row mb-3">
+                    <center>
+                      <a class="btn btn-secondary" data-bs-toggle="collapse" href="#more-options-collapse" role="button" aria-expanded="false" aria-controls="more-options-collapse">
+                        More options
+                        <i class="bi bi-arrow-down"></i>
+                      </a>
+                    </center>
+                  </div>
+
+                  <div class="collapse" id="more-options-collapse" style="margin-bottom: 20px">
+                    <div class="row mb-3">
+                      <label for="start-date-input" class="col-sm-1 col-form-label">From</label>
+                      <div class="col-sm-4">
+                        <input name='start_date' type="text" class="form-control" id="start-date-input" value="{% if search_type == 'news' %} {{ form.get('start_date') }} {% endif %}">
+                      </div>
+                      <div class="col-sm-2">
+                      </div>
+                      <label for="end-date-input" class="col-sm-1 col-form-label">Until</label>
+                      <div class="col-sm-4">
+                        <input name='end_date' type="text" class="form-control" id="end-date-input" value="{% if search_type == 'news' %} {{ form.get('end_date') }} {% endif %}">
+                      </div>
+                    </div>
+                  </div>
+
+                </form>
+
+                {% if articles is defined and articles|length > 0 %}
+                  <div id="results">
+                    <div id="articles">
+
+                      <table class="table">
+                        <thead>
+                          <tr>
+                            <th scope="col">Mean score</th>
+                            <th scope="col">Median score</th>
+                            <th scope="col">Standard deviation</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>{{ mean_sentiment_score }}</td>
+                            <td>{{ median_sentiment_score }}</td>
+                            <td>{{ std_dev_sentiment_scores }}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      <nav aria-label="Articles navigation" style="margin-bottom: 30px;">
+                        <ul id="articles-pagination" class="pagination justify-content-center">
+                          <li class="page-item"><a class="page-link" href="#">Previous</a></li>
+                          {% for article in articles %}
+                          <li class="page-item"><a class="page-link" href="#">{{ loop.index }}</a></li>
+                          {% endfor %}
+                          <li class="page-item"><a class="page-link" href="#">Next</a></li>
+                        </ul>
+                      </nav>
+
+                      {% if articles %}
+                        {% for article in articles %}
+                          <div id="article-{{ loop.index }}" class="article-content" style="display: none">
+                            <center>
+                              <h4>{{ article.title }}</h4><br/>
+                              {{ article.url }} <br/>
+                              {{ article.publish_date }} <br/>
+                              <br/>
+                              {{ sentiment_scores.get(article.url) }}
+                            </center>
+                            <hr/>
+                            {{ article.text }}
+                          </div>
+                        {% endfor %}
+                      {% endif %}
+                    </div>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="col-2">
+        </div>
+      </div>
+    </div>
+
+    <!-- Optional JavaScript; choose one of the two! -->
+
+    <!-- Option 1: Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
+
+    <script src="{{url_for('static', filename='jquery.twbsPagination.min.js')}}"></script>
+    <script src="{{url_for('static', filename='js/bootstrap-datepicker.min.js')}}"></script>
+
+    <script>
+      $(document).ready(function() {
+        $('#start-date-input').datepicker({
+          format: "yyyy-mm-dd"
+        });
+        $('#end-date-input').datepicker({
+          format: "yyyy-mm-dd"
+        });
+
+        $(document).ready(function() {
+          $('#tweets-found').DataTable({
+            pageLength: 100
+          });
+        });
+
+        $('#articles-pagination').twbsPagination({
+          totalPages: {{ articles | length }},
+          visiblePages: 10,
+          onPageClick: function (event, page) {
+            var oldPage = $('.article-content.active');
+            oldPage.css('display', 'none');
+            oldPage.removeClass('active');
+            // oldPage.removeClass('visible');
+            // oldPage.addClass('invisible');
+            var newPage = $('#article-' + page);
+            newPage.css('display', 'inline');
+            newPage.addClass('active');
+            // newPage.removeClass('invisible');
+            // newPage.addClass('visible');
+          }
+        });
+
+      });
+    </script>
+
+    <!-- Option 2: Separate Popper and Bootstrap JS -->
+    <!--
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js" integrity="sha384-7+zCNj/IqJ95wo16oMtfsKbZ9ccEh31eOz1HGyDuCQ6wgnyJNSYdrPa03rtR1zdB" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js" integrity="sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13" crossorigin="anonymous"></script>
+    -->
+  </body>
+</html>
+

@@ -9,3 +9,9 @@ urllib3==1.26.7
 xlrd==1.2.0
 xlwt==1.3.0
 spacy
+tweepy
+requests
+newspaper3k
+flask
+vaderSentiment
+validators

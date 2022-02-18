@@ -20,5 +20,8 @@ pip install -r requirements.txt
 # install additional library modules that are required
 python -m spacy download en_core_web_sm
 python -c "import nltk; nltk.download('punkt')"
+
+# Craete database
+python -c "from database import db_utils; db_utils.init_database()"
 ```
 

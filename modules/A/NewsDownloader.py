@@ -2,7 +2,7 @@ from newspaper import Article
 from docx import Document
 from openpyxl import load_workbook
 from theguardian import theguardian_content
-from datetime import date                    
+from datetime import date
 import openpyxl
 import newspaper
 import requests
@@ -65,24 +65,24 @@ def valid_pubdate_input(string_input_date):
     year = int(string_input_date[0:4])
     if year<1950 or year> todays_date.year:
         return False
-        
+
     month = int(string_input_date[5:7])
     if month<1 or month>12:
         return False
-        
+
     day= int(string_input_date[8:10])
     if day<1 or day>31:
         return False
-    
+
     return True
 
 def start_news_download_engine(self):
-    #asking user to input publication date from when on to search articles: 
+    #asking user to input publication date from when on to search articles:
     date_input = input('Please enter a date from which you want to start downloading in YYYY-MM-DD format:')
     if not valid_pubdate_input(date_input):
         print("Date input is not valid. Date is automatically set to 2000-01-01")
-        date_input = '2000-01-01' 
-    
+        date_input = '2000-01-01'
+
     wb_obj = openpyxl.load_workbook(self.path)
     for s in range(0, 2):
         sheet_obj = wb_obj.worksheets[s]
@@ -96,23 +96,23 @@ def start_news_download_engine(self):
             if self.key_word is None:
                 break
             print("Searching with key word:", self.key_word)
-            
+
             # CNN Build
             print("STARTED CNN")
             res = requests.get("https://search.api.cnn.io/content?size=100&q=" + self.key_word + "&sort=relevance")
             links = [x['url'] for x in res.json()['result']]
             if len(links) < 6:
-                continue                                      
+                continue
             init_article_download(self, links, "CNN", x, date_input)
-            
-            #TheGuardian build 
+
+            #TheGuardian build
             print("STARTED THEGUARDIAN")
             try:
                 links_guardian = scrape_theguardian(self.key_word, date_input)
                 init_article_download(self, links_guardian, "TheGuardian", x + 1, date_input)
             except:
                 print(f"Error scraping the guardian for kew word: {self.key_word}")
-                
+
 
 
 
@@ -157,11 +157,11 @@ def parse_and_compare_pbdates(string_pbdate, condition_date):
     month = string_pbdate[5:7]
     day= string_pbdate[8:10]
     #print(f'parsed datetime: {year}|{month}|{day}')
-    datetime_pbdate = datetime.date(int(year),int(month),int(day)) 
+    datetime_pbdate = datetime.date(int(year),int(month),int(day))
     if datetime_pbdate > condition_date:
         return True
     else:
-        return False 
+        return False
 
 def news_get_text(self, article, news_source,date_input):
     article.download()
@@ -170,11 +170,11 @@ def news_get_text(self, article, news_source,date_input):
     except:
         print("Not a valid URL: " + article.url)
         return 0
-    
-    #only take articles with publication date after provided date    
+
+    #only take articles with publication date after provided date
     year, month, day = map(int, date_input.split('-'))
     date_to_compare = datetime.date(year, month, day)
-    
+
     if news_source == "CNN":
         if article.url and article.publish_date is not None:
             article_meta_data = article.meta_data
@@ -186,20 +186,20 @@ def news_get_text(self, article, news_source,date_input):
                     return 0
             else:
                 #print(f'No published date for {article.title}')
-                return 0   
+                return 0
         else:
             return 0
-    
+
     text_length = len(article.text.split())
     if text_length < 200 or text_length > 3000:
         #print(f'Article text length is {text_length} and not enough!')
         return 0
-        
+
     if not (article.title in self.article_all_downloaded_titles_set):
         self.article_all_downloaded_titles_set.add(article.title)
     else:
         return 0
-        
+
     # TO DO  remove all that don't match in text Title
     if self.key_word not in article.title:
         #print(f'Keyword "{self.key_word}" not in article title "{article.title}"')
@@ -263,7 +263,7 @@ def findDuplicatesFilenames(data, sheet):
             filename= sheet.cell(row=row_ctr+1, column=10).value
             filename_to_push = str(filename)+ '.docx'
             filenames_to_delete.append(filename_to_push)
-    
+
     print(f"Filenames to delete are {filenames_to_delete}")
     return filenames_to_delete;
 
@@ -274,7 +274,7 @@ def deleteIfPathExists(filepath):
         print(f"Succesfully deleted {filepath}")
     else:
         print(f"The filepath {filepath} does not exist")
-        
+
 def deleteFiles(filenames_to_delete):
     """Deletes duplicated docx files in negate/positive subdirectories"""
     positive_downloaded_articles_path= "Texts as found input/" + "positive"
@@ -290,24 +290,24 @@ def cleanFromRepeatingArticle():
     """Removes duplicate articles in temporary sample excel table, deletes duplicated docx files and returns final cleaned sample table"""
     #print("Starting cleaning repeating articles and files.")
     sample_articles_excel_path = "Texts as found input/" + "tmpSample.xlsx"
-    
+
     # loads panda dataframe from tmpSample excel table
     try:
         wb = openpyxl.load_workbook(sample_articles_excel_path)
         sheet = wb.active
         data= pd.read_excel(sample_articles_excel_path, keep_default_na=False)
         data= data.dropna()
-    except: 
+    except:
         print(f"Troble in reading excel data from {sample_articles_excel_path}")
         return 0
-    
+
     #finds and deletes duplicate files in folders
-    try:    
+    try:
         filenames_to_delete = findDuplicatesFilenames(data,sheet);
         deleteFiles(filenames_to_delete)
     except:
         print(f"Error while trying to delete duplicated files.")
-    
+
     #deletes duplicates from dataframe and saves cleaned data to sample excel table
     try:
         data.drop_duplicates(subset ="http",keep = False, inplace = True)
@@ -319,4 +319,4 @@ def cleanFromRepeatingArticle():
         wb_to_save.save(final_sample_filename)
     except:
         print(f"Trouble creating cleaned from duplicates sample excel table.")
-    
+

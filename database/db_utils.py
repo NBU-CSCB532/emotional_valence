@@ -13,9 +13,39 @@ def init_database():
     con = db_connect() # connect to the database
     cur = con.cursor() # instantiate a cursor obj
     customers_sql = """
-     CREATE TABLE dictionary (
+     CREATE TABLE IF NOT EXISTS dictionary (
          id integer PRIMARY KEY,
          WordForm text NOT NULL,
          TranscriptAsFound text NOT NULL)"""
     cur.execute(customers_sql)
     cur.close()
+
+    cur = con.cursor()
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS searches (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp DATETIME NOT NULL,
+        type VARCHAR NOT NULL,
+        query VARCHAR NOT NULL,
+        status VARCHAR,
+        from_date DATE,
+        until_date DATE
+    )""")
+    cur.close()
+
+    cur = con.cursor()
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS documents (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title VARCHAR NOT NULL,
+        url VARCHAR NOT NULL,
+        publish_date DATETIME,
+        filename VARCHAR NOT NULL,
+        search_id INTEGER NOT NULL,
+        vader_score DOUBLE,
+        biphone_score DOUBLE,
+        FOREIGN KEY(search_id) REFERENCES searches (id)
+    )""")
+    cur.close()
+
+
