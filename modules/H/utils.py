@@ -70,3 +70,5 @@ def save_search_to_db(query, query_type, articles, scores, from_date=None, until
             data)
         conn.commit()
 
+        return search_id
+

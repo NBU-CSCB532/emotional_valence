@@ -21,6 +21,7 @@ def get_article_with_score(url):
     score = sentiment.vader_sentiment(article.text)
     return (article, score)
 
+
 def score_tweet(tweet):
     score = sentiment.vader_sentiment(tweet.text)
     return (tweet, score)
@@ -46,9 +47,8 @@ def search_news():
         article, score = get_article_with_score(query)
         articles = [article]
         sentiment_scores[article.url] = score
-        utils.save_article_file(article, score)
-        utils.save_search_to_db(query, 'news', articles, sentiment_scores, from_date, to_date)
     else:
+        article, score = get_article_with_score(query)
         articles_list = news.search_articles(
                 query,
                 100,
@@ -66,10 +66,15 @@ def search_news():
                     article, score = future.result()
                     articles.append(article)
                     sentiment_scores[article.url] = score
-                    utils.save_article_file(article, score)
                 except e:
                     # TODO
                     print(e)
+
+    search_id = utils.save_search_to_db(query, 'news', articles, sentiment_scores, from_date, to_date)
+    for article in articles:
+        utils.save_article_file(article, sentiment_scores[article.url])
+
+    sentiment.run_biphone_scoring(search_id)
 
     mean_score = statistics.mean(sentiment_scores.values())
     median_score = statistics.median(sentiment_scores.values())
@@ -84,6 +89,7 @@ def search_news():
             median_sentiment_score=median_score,
             std_dev_sentiment_scores=std_dev
             )
+
 
 @app.route('/search-tweets', methods=['POST'])
 def search_tweets():
