@@ -128,5 +128,46 @@ def search_tweets():
             )
 
 
+@app.route('/searches')
+def searches():
+    searches = utils.get_searches()
+    return render_template('searches.html', searches=searches)
+
+
+@app.route('/searches/<id>')
+def show_search(id):
+    search = utils.get_search(id)
+    documents = list(utils.get_documents_for_search(id))
+
+    vader_scores = [d[6] for d in documents if d[6]]
+    biphone_scores = [d[7] for d in documents if d[7]]
+
+    vader_mean_score = statistics.mean(vader_scores)
+    vader_median_score = statistics.median(vader_scores)
+    vader_std_dev = statistics.stdev(vader_scores) if len(vader_scores) > 1 else None
+
+    biphone_mean_score = statistics.mean(biphone_scores)
+    biphone_median_score = statistics.median(biphone_scores)
+    biphone_std_dev = statistics.stdev(biphone_scores) if len(biphone_scores) > 1 else None
+
+    document_texts = {doc[1]: utils.read_document(doc[1], doc[6]) for doc in documents}
+
+    if search[2] == 'news':
+        return render_template('show_news_search.html',
+                search=search,
+                articles=documents,
+                document_texts=document_texts,
+                vader_mean_sentiment_score=vader_mean_score,
+                vader_median_sentiment_score=vader_median_score,
+                vader_std_dev_sentiment_scores=vader_std_dev,
+                biphone_mean_sentiment_score=biphone_mean_score,
+                biphone_median_sentiment_score=biphone_median_score,
+                biphone_std_dev_sentiment_scores=biphone_std_dev)
+    else:
+        return render_template('show_tweets_search.html',
+                search=search,
+                documents=documents)
+
+
 if __name__ == '__main__':
     app.run(debug=True)

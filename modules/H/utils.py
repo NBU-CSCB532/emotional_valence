@@ -72,3 +72,50 @@ def save_search_to_db(query, query_type, articles, scores, from_date=None, until
 
         return search_id
 
+
+def get_documents_for_search(search_id):
+    with db_utils.db_connect() as conn:
+        cursor = conn.cursor()
+        return cursor.execute(
+                'SELECT * FROM documents WHERE search_id = ?',
+                (search_id,))
+
+
+def update_document_biphone_score(document_id, score):
+    with db_utils.db_connect() as conn:
+        cursor = conn.cursor()
+        result = cursor.execute(
+                'UPDATE documents SET biphone_score = ? WHERE id = ?',
+                (score, document_id))
+
+
+def update_search_status(search_id, status):
+    with db_utils.db_connect() as conn:
+        cursor = conn.cursor()
+        result = cursor.execute(
+                'UPDATE searches SET status = ? WHERE id = ?',
+                (status, search_id))
+
+
+def get_searches():
+    with db_utils.db_connect() as conn:
+        cursor = conn.cursor()
+        return cursor.execute(
+                'SELECT * FROM searches ORDER BY timestamp DESC')
+
+
+def get_search(id):
+    with db_utils.db_connect() as conn:
+        cursor = conn.cursor()
+        return cursor.execute(
+                'SELECT * FROM searches WHERE id = ?', (id,)).fetchone()
+
+
+def read_document(title, score):
+    filepath = get_article_filepath(title, score)
+    doc = Document(filepath)
+    paragraphs = []
+    for paragraph in doc.paragraphs:
+        if paragraph:
+            paragraphs += [p for p in paragraph.text.split('\n') if p != '']
+    return paragraphs

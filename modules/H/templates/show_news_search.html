@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
+
+    <link rel="stylesheet" href="{{url_for('static', filename='/css/bootstrap-datepicker.min.css')}}">
+
+
+    <title>Sentiments</title>
+
+    <style>
+      .nav-tabs > li {
+        float:none;
+        display:inline-block;
+        zoom:1;
+      }
+
+      .nav-tabs {
+        text-align: center;
+      }
+
+      #results {
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col-2">
+        </div>
+        <div class="col-8">
+          <center>
+            <h1><a href="/" style="color: black; text-decoration: none">Emotional valence</a></h1>
+          </center>
+          <hr/>
+          <a href="/searches">Search history</a>
+          <div id="content" style="margin-top: 45px">
+            <div id="results">
+              <div id="articles">
+
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Mean score</th>
+                      <th scope="col">Median score</th>
+                      <th scope="col">Standard deviation</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Vader score</td>
+                      <td>{{ vader_mean_sentiment_score }}</td>
+                      <td>{{ vader_median_sentiment_score }}</td>
+                      <td>{{ vader_std_dev_sentiment_scores }}</td>
+                    </tr>
+                    <tr>
+                      <td>Biphone score</td>
+                      <td>{{ biphone_mean_sentiment_score }}</td>
+                      <td>{{ biphone_median_sentiment_score }}</td>
+                      <td>{{ biphone_std_dev_sentiment_scores }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <nav aria-label="Articles navigation" style="margin-bottom: 30px;">
+                  <ul id="articles-pagination" class="pagination justify-content-center">
+                    <li class="page-item"><a class="page-link" href="#">Previous</a></li>
+                    {% for article in articles %}
+                    <li class="page-item"><a class="page-link" href="#">{{ loop.index }}</a></li>
+                    {% endfor %}
+                    <li class="page-item"><a class="page-link" href="#">Next</a></li>
+                  </ul>
+                </nav>
+
+                {% if articles %}
+                  {% for article in articles %}
+                    <div id="article-{{ loop.index }}" class="article-content" style="display: none">
+                      <center>
+                        <h4>{{ article[1] }}</h4><br/>
+                        {{ article[2] }} <br/>
+                        {{ article[3] }} <br/>
+                        <br/>
+                        Vader score: {{ article[6] }}<br/>
+                        Biphone score: {{ article[7] }}
+                      </center>
+                      <hr/>
+                      {% for paragraph in document_texts[article[1]] %}
+                        <p>{{ paragraph }}</p>
+                      {% endfor %}
+                    </div>
+                  {% endfor %}
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="col-2">
+        </div>
+      </div>
+    </div>
+
+    <!-- Optional JavaScript; choose one of the two! -->
+
+    <!-- Option 1: Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
+
+    <script src="{{url_for('static', filename='jquery.twbsPagination.min.js')}}"></script>
+    <script src="{{url_for('static', filename='js/bootstrap-datepicker.min.js')}}"></script>
+
+    <script>
+      $(document).ready(function() {
+
+        $('#articles-pagination').twbsPagination({
+          totalPages: {{ articles | length }},
+          visiblePages: 10,
+          onPageClick: function (event, page) {
+            var oldPage = $('.article-content.active');
+            oldPage.css('display', 'none');
+            oldPage.removeClass('active');
+            var newPage = $('#article-' + page);
+            newPage.css('display', 'inline');
+            newPage.addClass('active');
+          }
+        });
+
+      });
+    </script>
+
+    <!-- Option 2: Separate Popper and Bootstrap JS -->
+    <!--
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js" integrity="sha384-7+zCNj/IqJ95wo16oMtfsKbZ9ccEh31eOz1HGyDuCQ6wgnyJNSYdrPa03rtR1zdB" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js" integrity="sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13" crossorigin="anonymous"></script>
+    -->
+  </body>
+</html>
+

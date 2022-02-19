@@ -38,9 +38,10 @@
         </div>
         <div class="col-8">
           <center>
-            <h1><a href="/" style="color: black; text-decoration: none">Sentiment analysis</a></h1>
+            <h1><a href="/" style="color: black; text-decoration: none">Emotional valence</a></h1>
           </center>
           <hr/>
+          <a href="/searches">Search history</a>
           <div id="content" style="margin-top: 45px" >
             <ul class="nav nav-tabs justify-content-center" id="tabs" role="tablist">
               <li class="nav-item" role="presentation">
@@ -158,6 +159,9 @@
 
                 {% if articles is defined and articles|length > 0 %}
                   <div id="results">
+                    <div class="alert alert-primary" role="alert">
+                      Note that biphone-based scoring takes more time to calculate. Once the calculation completes, this score will be available in the <a href="/searches">search history</a> page.
+                    </div>
                     <div id="articles">
 
                       <table class="table">
