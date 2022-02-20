@@ -154,3 +154,11 @@ cython_debug/
 # vim files
 *.swp
 *.un~
+
+
+# docx and xlsx files used for storing data or intermodule communication
+*.docx
+*.xlsx
+modules/F/Biphone Step 1.csv
+modules/F/Biphone Step 2.csv
+
