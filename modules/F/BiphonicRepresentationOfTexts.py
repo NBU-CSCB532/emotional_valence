@@ -60,12 +60,12 @@ class BiphonicRepresentationOfTexts():
         cur.close()
 
         my_path = os.path.abspath(os.path.dirname(__file__))
-        step_1_path = os.path.abspath(os.path.join(my_path, 'Biphone Step 1.xlsx'))
-        step_2_path = os.path.abspath(os.path.join(my_path, 'Biphone Step 2.xlsx'))
-        pd.DataFrame(step_1_result).to_excel(step_1_path,
+        step_1_path = os.path.abspath(os.path.join(my_path, 'Biphone Step 1.csv'))
+        step_2_path = os.path.abspath(os.path.join(my_path, 'Biphone Step 2.csv'))
+        pd.DataFrame(step_1_result).to_csv(step_1_path,
                                              header=['Sentence', 'Word', 'Position', 'WordTheDii', 'TranscriptOrStop',
                                                      'TranscriptSyl'], index=False)
-        pd.DataFrame(step_2_result).to_excel(step_2_path,
+        pd.DataFrame(step_2_result).to_csv(step_2_path,
                                              header=['Filename', 'Sentence', 'NumberSentence', 'Word', 'Position',
                                                      'TranscriptOrStop', 'TranscriptSyl', 'Sequence', 'Syllable',
                                                      'SyllableKey', 'BiphoneN'], index=False)

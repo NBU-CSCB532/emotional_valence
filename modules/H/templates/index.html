@@ -167,6 +167,7 @@
                       <table class="table">
                         <thead>
                           <tr>
+                            <th scope="col">Scoring type</th>
                             <th scope="col">Mean score</th>
                             <th scope="col">Median score</th>
                             <th scope="col">Standard deviation</th>
@@ -174,6 +175,7 @@
                         </thead>
                         <tbody>
                           <tr>
+                            <td>Vader score:</td>
                             <td>{{ mean_sentiment_score }}</td>
                             <td>{{ median_sentiment_score }}</td>
                             <td>{{ std_dev_sentiment_scores }}</td>
@@ -199,7 +201,7 @@
                               {{ article.url }} <br/>
                               {{ article.publish_date }} <br/>
                               <br/>
-                              {{ sentiment_scores.get(article.url) }}
+                              Vader score: {{ sentiment_scores.get(article.url) }}
                             </center>
                             <hr/>
                             {{ article.text }}

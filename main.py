@@ -14,13 +14,11 @@ from modules.ProjectCleaner import ProjectCleaner
 
 
 def main(no_cleaning=False):
-    print("!@# MAIN")
     # As the whole communication between modules is based on editing files,
     # having two concurrent processes will cause race condition and will
     # likely render the data files inconsistent.
     # We employ an inter-process lock to combat this issue.
     with ILock('emotional_valence_main_lock'):
-        print("!@# MAIN got lock")
         if not no_cleaning:
             projectCleaner = ProjectCleaner()
             projectCleaner.clean()

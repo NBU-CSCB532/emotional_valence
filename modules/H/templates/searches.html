@@ -29,6 +29,10 @@
       #results {
         margin-top: 20px;
       }
+
+      #searches-table tbody tr {
+        cursor: pointer;
+      }
     </style>
   </head>
   <body>
@@ -46,7 +50,7 @@
           </center>
           <div id="content" style="margin-top: 45px" >
             <div id="searches">
-              <table class="table" id="searches-table">
+              <table class="table hover" id="searches-table">
                 <thead>
                   <tr>
                     <th scope="col">ID</th>
@@ -90,7 +94,8 @@
     <script>
       $(document).ready(function() {
         var table = $('#searches-table').DataTable({
-          pageLength: 100
+          pageLength: 100,
+          order: [[ 1, "desc" ]]
         });
 
         $('#searches-table tbody').on('click', 'tr', function() {

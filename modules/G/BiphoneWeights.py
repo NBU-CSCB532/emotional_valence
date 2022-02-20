@@ -13,7 +13,7 @@ class BiphoneWeights():
 
         my_path = os.path.abspath(os.path.dirname(__file__))
         step_2_path = os.path.abspath(os.path.join(my_path, '..', 'F'))
-        step_2 = os.path.join(step_2_path, 'Biphone Step 2.xlsx')
+        step_2 = os.path.join(step_2_path, 'Biphone Step 2.csv')
 
         cur = conn.cursor()
 
@@ -60,7 +60,7 @@ class BiphoneWeights():
         row = 2
 
         df = pd.DataFrame()
-        df = df.append(pd.read_excel(step_2), ignore_index=True)
+        df = df.append(pd.read_csv(step_2), ignore_index=True)
         t1 = df.loc[2, 'Filename']
         t2 = pd.DataFrame()
         t2 = t2.append(pd.read_excel(path), ignore_index=True)

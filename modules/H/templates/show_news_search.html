@@ -44,6 +44,13 @@
           <a href="/searches">Search history</a>
           <div id="content" style="margin-top: 45px">
             <div id="results">
+              <center>
+                <h3>Query: {{ search[3] }}</h3><br/>
+                Type: {{ search[2] }}<br/>
+                Timestamp: {{ search[1].split('.')[0] }}<br/>
+              </center>
+              <hr/>
+
               <div id="articles">
 
                 <table class="table">

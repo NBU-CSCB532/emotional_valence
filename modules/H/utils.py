@@ -1,6 +1,7 @@
 import unicodedata
 import re
 import os
+import contextlib
 
 from datetime import datetime
 from docx import Document
@@ -35,12 +36,35 @@ def get_article_filepath(title, score):
     emotion = 'negative' if score < 0 else 'positive'
     return os.path.join(script_path, '..', '..', 'Texts as found input', emotion, filename)
 
+
 def save_article_file(article, score):
     document = Document()
     document.add_heading(article.title, 0)
     document.add_paragraph(article.text)
     filepath = get_article_filepath(article.title, score)
     document.save(filepath)
+
+
+def execute_statement(statement, args=tuple()):
+    with contextlib.closing(db_utils.db_connect()) as conn:
+        with conn:
+            with contextlib.closing(conn.cursor()) as cursor:
+                cursor.execute(statement, args)
+
+
+def select_many(statement, args=tuple()):
+    with contextlib.closing(db_utils.db_connect()) as conn:
+        with conn:
+            with contextlib.closing(conn.cursor()) as cursor:
+                return cursor.execute(statement, args).fetchall()
+
+
+def select_one(statement, args=tuple()):
+    with contextlib.closing(db_utils.db_connect()) as conn:
+        with conn:
+            with contextlib.closing(conn.cursor()) as cursor:
+                return cursor.execute(statement, args).fetchone()
+
 
 def save_search_to_db(query, query_type, articles, scores, from_date=None, until_date=None):
     with db_utils.db_connect() as conn:
@@ -74,41 +98,29 @@ def save_search_to_db(query, query_type, articles, scores, from_date=None, until
 
 
 def get_documents_for_search(search_id):
-    with db_utils.db_connect() as conn:
-        cursor = conn.cursor()
-        return cursor.execute(
-                'SELECT * FROM documents WHERE search_id = ?',
-                (search_id,))
+    return select_many(
+            'SELECT * FROM documents WHERE search_id = ?',
+            (search_id,))
 
 
 def update_document_biphone_score(document_id, score):
-    with db_utils.db_connect() as conn:
-        cursor = conn.cursor()
-        result = cursor.execute(
-                'UPDATE documents SET biphone_score = ? WHERE id = ?',
-                (score, document_id))
+    execute_statement(
+            'UPDATE documents SET biphone_score = ? WHERE id = ?',
+            (score, document_id))
 
 
 def update_search_status(search_id, status):
-    with db_utils.db_connect() as conn:
-        cursor = conn.cursor()
-        result = cursor.execute(
-                'UPDATE searches SET status = ? WHERE id = ?',
-                (status, search_id))
+    execute_statement(
+            'UPDATE searches SET status = ? WHERE id = ?',
+            (status, search_id))
 
 
 def get_searches():
-    with db_utils.db_connect() as conn:
-        cursor = conn.cursor()
-        return cursor.execute(
-                'SELECT * FROM searches ORDER BY timestamp DESC')
+    return select_many('SELECT * FROM searches ORDER BY timestamp DESC')
 
 
 def get_search(id):
-    with db_utils.db_connect() as conn:
-        cursor = conn.cursor()
-        return cursor.execute(
-                'SELECT * FROM searches WHERE id = ?', (id,)).fetchone()
+    return select_one('SELECT * FROM searches WHERE id = ?', (id,))
 
 
 def read_document(title, score):

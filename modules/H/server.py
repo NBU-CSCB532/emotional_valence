@@ -48,10 +48,9 @@ def search_news():
         articles = [article]
         sentiment_scores[article.url] = score
     else:
-        article, score = get_article_with_score(query)
         articles_list = news.search_articles(
                 query,
-                100,
+                30,
                 from_date=from_date,
                 to_date=to_date)
 

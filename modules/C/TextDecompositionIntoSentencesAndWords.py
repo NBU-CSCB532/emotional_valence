@@ -228,18 +228,16 @@ class TextDecompositionIntoSentencesAndWords:
             # look only for Excel files
             if filename.endswith(".xlsx"):
                 file = str(os.path.join(self.de_path, filename))
-
-                # print("Files that were processed: " + file)
-
                 df_sentence = df_sentence.append(pd.read_excel(file, sheet_name="Decomposition into sentences"))
-                w = pd.read_excel(file, sheet_name="Decomposition into words")
-                w = w[~np.isnan(w['position'])]
-                df_words = df_words.append(w)
-                df_words = df_words[df_words['position'] != '']
-                writer = pd.ExcelWriter(self.all_decomposed_texts_path)
-                df_sentence.to_excel(writer, 'Decomposition into sentences')
-                df_words.to_excel(writer, 'Decomposition into words')
-                writer.save()
+                df_words = df_words.append(pd.read_excel(file, sheet_name="Decomposition into words"))
+                print("Files that were processed: " + file)
+
+        df_words = df_words[~np.isnan(df_words['position'])]
+        df_words = df_words[df_words['position'] != '']
+        writer = pd.ExcelWriter(self.all_decomposed_texts_path)
+        df_sentence.to_excel(writer, 'Decomposition into sentences')
+        df_words.to_excel(writer, 'Decomposition into words')
+        writer.save()
 
         words = pd.read_excel(self.all_decomposed_texts_path, sheet_name='Decomposition into words', usecols="B,C,D,E")
 

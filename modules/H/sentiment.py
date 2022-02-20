@@ -45,7 +45,7 @@ def biphone_scoring(search_id):
             utils.update_document_biphone_score(doc_id, score)
 
         print('Updating the search status')
-        update_search_status(search_id, 'completed')
+        utils.update_search_status(search_id, 'completed')
 
         print('Done')
 
