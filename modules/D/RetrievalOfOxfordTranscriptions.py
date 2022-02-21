@@ -5,6 +5,8 @@ import argparse
 
 import openpyxl
 import pandas as pd
+import dask.dataframe as dd
+import numpy as np
 import urllib3
 from html.parser import HTMLParser
 from openpyxl import load_workbook
@@ -592,6 +594,57 @@ def is_valid_file(parser, arg):
     return arg
 
 
+def get_word_transcriptions(raw_word):
+    """Retrieves the transcriptions for the given word.
+    Returns a list with the word as first element and the transcriptions as the remaining elements."""
+    should_continue = True
+    word = raw_word.strip(CHARACTERS_TO_STRIP).replace("’", "'").lower()
+    result = [raw_word]
+    try:
+        for separator in WORD_SEPARATORS:
+            if separator in word:
+                result.append(getComplexTranscription(word))
+                should_continue = False
+
+        if not should_continue:
+            return result
+
+        transcription_dicts = getTranscription(word)
+        for transcriptions in transcription_dicts:
+            for wordType in transcriptions:
+                transcribed = ""
+                # If the word is a verb, find out which is its proper form and use it as output.
+                if wordType == "verb":
+                    if word[-3:] == "ing":
+                        if syllableCount(word) == 1:
+                            transcribed = transcriptions["verb"][0]
+                        else:
+                            if transcriptions["verb"][-1][-2:] == "ɪŋ":
+                                transcribed = transcriptions["verb"][-1]
+                            elif transcriptions["verb"][-2][-2:] == "ɪŋ":
+                                transcribed = transcriptions["verb"][-2]
+                            else:
+                                for transcription in transcriptions["verb"]:
+                                    if transcription[-2:] == "ɪŋ":
+                                        transcribed = transcription
+
+                    elif word[-1] == "s":
+                        if word[-2:] == "ss":
+                            transcribed = transcriptions["verb"][1]
+                        else:
+                            transcribed = transcriptions["verb"][2]
+                    elif word[-2:] == "ed":
+                        transcribed = transcriptions["verb"][3]
+                    else:
+                        transcribed = transcriptions["verb"][1]
+                    result.append(transcribed)
+                else:
+                    # Otherwise, return all matched transcriptions.
+                    result += [transcription for transcription in transcriptions[wordType] if transcription]
+        return result
+    except Exception as e:
+        return [raw_word]
+
 class RetrievalOfOxfordTranscriptions:
     def retrieve():
         argParser = argparse.ArgumentParser(
@@ -680,87 +733,21 @@ class RetrievalOfOxfordTranscriptions:
                     except Exception as e:
                         print("An error occurred at word \"{0}\". Message: {1}".format(word, e))
         else:
-            workbook = load_workbook(filename=FILENAME)
-            sheet = workbook.active
-            totalWords = sheet.max_row
-            row = 1
-            errorCount = 0
-            rPos = "A" + str(1)  # rPos = Read Position
-            wPos = "B" + str(1)  # wPos = Write Position
-            while sheet[rPos].value != None:
-                sheet[wPos] = ""
-                shouldContinue = True
-                word = sheet[rPos].value
-                word = word.strip(CHARACTERS_TO_STRIP)
-                word = word.replace("’", "'")
-                word = word.lower()
-                if not VERBOSE_DEBUG:
-                    updateProgress(row, totalWords, word, errorCount)
-                complex = False
-                try:
-                    for separator in WORD_SEPARATORS:
-                        if separator in word:
-                            result = getComplexTranscription(word)
-                            sheet[wPos] = result
-                            wPos = str(chr(ord(wPos[0]) + 1)) + str(row)
-                            shouldContinue = False
-                    if shouldContinue:
-                        result = getTranscription(word)
-                        for transcriptions in result:
-                            for wordType in transcriptions:
-                                transcribed = ""
-                                # If the word is a verb, find out which is its proper form and use it as output.
-                                if wordType == "verb":
-                                    if word[-3:] == "ing":
-                                        if syllableCount(word) == 1:
-                                            transcribed = transcriptions["verb"][0]
-                                        else:
-                                            if transcriptions["verb"][-1][-2:] == "ɪŋ":
-                                                transcribed = transcriptions["verb"][-1]
-                                            elif transcriptions["verb"][-2][-2:] == "ɪŋ":
-                                                transcribed = transcriptions["verb"][-2]
-                                            else:
-                                                for transcription in transcriptions["verb"]:
-                                                    if transcription[-2:] == "ɪŋ":
-                                                        transcribed = transcription
+            # Read the A column as pandas.Series
+            series = pd.read_excel(FILENAME, header=None, usecols="A", squeeze=True)
 
-                                    elif word[-1] == "s":
-                                        if word[-2:] == "ss":
-                                            transcribed = transcriptions["verb"][1]
-                                        else:
-                                            transcribed = transcriptions["verb"][2]
-                                    elif word[-2:] == "ed":
-                                        transcribed = transcriptions["verb"][3]
-                                    else:
-                                        transcribed = transcriptions["verb"][1]
-                                    sheet[wPos] = transcribed
-                                    wPos = nextColumn(wPos[0]) + str(row)
-                                # Otherwise, return all matched transcriptions.
-                                else:
-                                    for transcription in transcriptions[wordType]:
-                                        if transcription != "":
-                                            sheet[wPos] = transcription
-                                            wPos = nextColumn(wPos[0]) + str(row)
-                except Exception as e:
-                    errorCount += 1
-                if (row % 50 == 0):
-                    workbook.save(filename=os.path.abspath(
-                        os.path.join(os.path.abspath(os.path.dirname(__file__)), "../../", "Novel Word",
-                                     "Transcribed.xlsx")))
-                row += 1
-                rPos = "A" + str(row)
-                wPos = "B" + str(row)
+            if series.size == 0:
+                print("No novel words.")
+                return
 
-            workbook.save(filename=os.path.abspath(
-                os.path.join(os.path.abspath(os.path.dirname(__file__)), "../../", "Novel Word", "Transcribed.xlsx")))
-            workbook.close()
-            if (errorCount > 0):
-                print(
-                    "\n\rFinished with {0} error(s). Check the file you supplied (transcribe.xlsx by default).".format(
-                        errorCount))
-            else:
-                print(
-                    "\n\rAll done - no problems encountered. Check the file you supplied (transcribe.xlsx by default).")
+            # Partition the series using Dask
+            ds = dd.from_pandas(series, npartitions=8)
+
+            result = ds.apply(get_word_transcriptions, meta=(0, 'object'))
+            output_file = os.path.abspath(
+                    os.path.join(os.path.abspath(os.path.dirname(__file__)), "../../", "Novel Word", "Transcribed.xlsx"))
+            output_dataframe = pd.DataFrame.from_records(result.compute())
+            output_dataframe.to_excel(output_file, header=False, index=False)
 
         print("Novel Words’ transcriptions retrieved from Oxford Dictionary are in the file Transcribed.xlsx")
 
