@@ -29,7 +29,9 @@ def init_database():
         query VARCHAR NOT NULL,
         status VARCHAR,
         from_date DATE,
-        until_date DATE
+        until_date DATE,
+        filename VARCHAR,
+        biphone_score DOUBLE
     )""")
     cur.close()
 
@@ -44,6 +46,19 @@ def init_database():
         search_id INTEGER NOT NULL,
         vader_score DOUBLE,
         biphone_score DOUBLE,
+        FOREIGN KEY(search_id) REFERENCES searches (id)
+    )""")
+    cur.close()
+
+    cur = con.cursor()
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS tweets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tweet_id VARCHAR,
+        text TEXT,
+        created_at DATETIME,
+        search_id INTEGER NOT NULL,
+        vader_score DOUBLE,
         FOREIGN KEY(search_id) REFERENCES searches (id)
     )""")
     cur.close()

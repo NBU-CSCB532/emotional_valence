@@ -69,11 +69,11 @@ def search_news():
                     # TODO
                     print(e)
 
-    search_id = utils.save_search_to_db(query, 'news', articles, sentiment_scores, from_date, to_date)
+    search_id = utils.save_news_search_to_db(query, articles, sentiment_scores, from_date, to_date)
     for article in articles:
         utils.save_article_file(article, sentiment_scores[article.url])
 
-    sentiment.run_biphone_scoring(search_id)
+    sentiment.run_news_biphone_scoring(search_id)
 
     mean_score = statistics.mean(sentiment_scores.values())
     median_score = statistics.median(sentiment_scores.values())
@@ -95,7 +95,7 @@ def search_tweets():
     print(request.form)
     query = request.form.get('query')
 
-    tweets = twitter.search_tweets(query, limit=250)
+    tweets = twitter.search_tweets(query, limit=100)
     sentiment_scores = {}
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -116,6 +116,11 @@ def search_tweets():
     median_score = statistics.median(sentiment_scores.values())
     std_dev = statistics.stdev(sentiment_scores.values()) if len(sentiment_scores) > 1 else None
 
+    search_id = utils.save_twitter_search_to_db(query, tweets, sentiment_scores)
+    utils.save_tweets_file(search_id, query, tweets, mean_score)
+
+    sentiment.run_twitter_biphone_scoring(search_id)
+
     return render_template('index.html',
             search_type='tweets',
             tweets=tweets,
@@ -133,10 +138,9 @@ def searches():
     return render_template('searches.html', searches=searches)
 
 
-@app.route('/searches/<id>')
-def show_search(id):
-    search = utils.get_search(id)
-    documents = list(utils.get_documents_for_search(id))
+def show_news_search(search):
+    search_id = search[0]
+    documents = list(utils.get_documents_for_search(search_id))
 
     vader_scores = [d[6] for d in documents if d[6]]
     biphone_scores = [d[7] for d in documents if d[7]]
@@ -151,21 +155,48 @@ def show_search(id):
 
     document_texts = {doc[1]: utils.read_document(doc[1], doc[6]) for doc in documents}
 
+    return render_template('show_news_search.html',
+            search=search,
+            articles=documents,
+            document_texts=document_texts,
+            vader_mean_sentiment_score=vader_mean_score,
+            vader_median_sentiment_score=vader_median_score,
+            vader_std_dev_sentiment_scores=vader_std_dev,
+            biphone_mean_sentiment_score=biphone_mean_score,
+            biphone_median_sentiment_score=biphone_median_score,
+            biphone_std_dev_sentiment_scores=biphone_std_dev)
+
+def show_twitter_search(search):
+    search_id = search[0]
+
+    tweets = list(utils.get_tweets(search_id))
+
+    vader_scores = [d[5] for d in tweets if d[5]]
+
+    vader_mean_score = statistics.mean(vader_scores)
+    vader_median_score = statistics.median(vader_scores)
+    vader_std_dev = statistics.stdev(vader_scores) if len(vader_scores) > 1 else None
+
+    # biphone score is aggregated score for all tweets in the search
+    biphone_score = search[8]
+
+    return render_template('show_twitter_search.html',
+            search=search,
+            tweets=tweets,
+            vader_mean_sentiment_score=vader_mean_score,
+            vader_median_sentiment_score=vader_median_score,
+            vader_std_dev_sentiment_scores=vader_std_dev,
+            biphone_score=biphone_score)
+
+
+@app.route('/searches/<id>')
+def show_search(id):
+    search = utils.get_search(id)
+
     if search[2] == 'news':
-        return render_template('show_news_search.html',
-                search=search,
-                articles=documents,
-                document_texts=document_texts,
-                vader_mean_sentiment_score=vader_mean_score,
-                vader_median_sentiment_score=vader_median_score,
-                vader_std_dev_sentiment_scores=vader_std_dev,
-                biphone_mean_sentiment_score=biphone_mean_score,
-                biphone_median_sentiment_score=biphone_median_score,
-                biphone_std_dev_sentiment_scores=biphone_std_dev)
+        return show_news_search(search)
     else:
-        return render_template('show_tweets_search.html',
-                search=search,
-                documents=documents)
+        return show_twitter_search(search)
 
 
 if __name__ == '__main__':

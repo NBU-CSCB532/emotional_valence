@@ -28,6 +28,7 @@
 
       #results {
         margin-top: 20px;
+        margin-bottom: 40px;
       }
     </style>
   </head>
@@ -51,7 +52,7 @@
               </center>
               <hr/>
 
-              <div id="articles">
+              <div id="tweets">
 
                 <table class="table">
                   <thead>
@@ -60,6 +61,7 @@
                       <th scope="col">Mean score</th>
                       <th scope="col">Median score</th>
                       <th scope="col">Standard deviation</th>
+                      <th scope="col">Aggregated score</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -68,44 +70,48 @@
                       <td>{{ vader_mean_sentiment_score }}</td>
                       <td>{{ vader_median_sentiment_score }}</td>
                       <td>{{ vader_std_dev_sentiment_scores }}</td>
+                      <td>N/a</td>
                     </tr>
                     <tr>
                       <td>Biphone score</td>
-                      <td>{{ biphone_mean_sentiment_score }}</td>
-                      <td>{{ biphone_median_sentiment_score }}</td>
-                      <td>{{ biphone_std_dev_sentiment_scores }}</td>
+                      <td>N/a</td>
+                      <td>N/a</td>
+                      <td>N/a</td>
+                      <td>{{ biphone_score }}</td>
                     </tr>
                   </tbody>
                 </table>
 
-                <nav aria-label="Articles navigation" style="margin-bottom: 30px;">
-                  <ul id="articles-pagination" class="pagination justify-content-center">
-                    <li class="page-item"><a class="page-link" href="#">Previous</a></li>
-                    {% for article in articles %}
-                    <li class="page-item"><a class="page-link" href="#">{{ loop.index }}</a></li>
-                    {% endfor %}
-                    <li class="page-item"><a class="page-link" href="#">Next</a></li>
-                  </ul>
-                </nav>
-
-                {% if articles %}
-                  {% for article in articles %}
-                    <div id="article-{{ loop.index }}" class="article-content" style="display: none">
-                      <center>
-                        <h4>{{ article[1] }}</h4><br/>
-                        {{ article[2] }} <br/>
-                        {{ article[3] }} <br/>
-                        <br/>
-                        Vader score: {{ article[6] }}<br/>
-                        Biphone score: {{ article[7] }}
-                      </center>
-                      <hr/>
-                      {% for paragraph in document_texts[article[1]] %}
-                        <p>{{ paragraph }}</p>
+                <table id="tweets-found" class="display">
+                  <thead>
+                    <tr>
+                      <th>Tweet ID</th>
+                      <th>Timestamp</th>
+                      <th>Text</th>
+                      <th>Vader score</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% if tweets %}
+                      {% for tweet in tweets %}
+                        <tr>
+                          <td>
+                            {{ tweet[1] }}
+                          </td>
+                          <td>
+                            {{ tweet[3].split('+')[0] }}
+                          </td>
+                          <td>
+                            {{ tweet[2] }}
+                          </td>
+                          <td>
+                            {{ tweet[5] }}
+                          </td>
+                        </tr>
                       {% endfor %}
-                    </div>
-                  {% endfor %}
-                {% endif %}
+                    {% endif %}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -129,20 +135,9 @@
 
     <script>
       $(document).ready(function() {
-
-        $('#articles-pagination').twbsPagination({
-          totalPages: {{ articles | length }},
-          visiblePages: 10,
-          onPageClick: function (event, page) {
-            var oldPage = $('.article-content.active');
-            oldPage.css('display', 'none');
-            oldPage.removeClass('active');
-            var newPage = $('#article-' + page);
-            newPage.css('display', 'inline');
-            newPage.addClass('active');
-          }
+        $('#tweets-found').DataTable({
+          pageLength: 25
         });
-
       });
     </script>
 

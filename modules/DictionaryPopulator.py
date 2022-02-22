@@ -41,7 +41,7 @@ class DictionaryPopulator():
         sql = 'CREATE UNIQUE INDEX IF NOT EXISTS dictionary_word_lower_idx ON dictionary(lower(WordForm))'
         cur.execute(sql)
 
-        sql = 'CREATE UNIQUE INDEX IF NOT EXISTS stop_words_word_lower_idx ON stop_words(lower(" Stop Words"))'
+        sql = 'CREATE INDEX IF NOT EXISTS stop_words_word_lower_idx ON stop_words(lower(" Stop Words"))'
         cur.execute(sql)
 
         sql = 'CREATE UNIQUE INDEX IF NOT EXISTS syllables_weights_word_lower_idx ON syllables_weights(lower("Syllable_Key"))'

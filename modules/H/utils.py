@@ -8,6 +8,10 @@ from docx import Document
 
 from database import db_utils
 
+from .common import SEARCH_TYPE_NEWS
+from .common import SEARCH_TYPE_TWITTER
+from .common import SEARCH_STATUS_STARTED
+
 
 def slugify(value, allow_unicode=False):
     """
@@ -26,12 +30,15 @@ def slugify(value, allow_unicode=False):
     return re.sub(r'[-\s]+', '-', value).strip('-_')
 
 
-def get_article_filename(title):
+def get_doc_filename(title):
     return slugify(title) + '.docx'
 
 
-def get_article_filepath(title, score):
-    filename = get_article_filename(title)
+def get_tweets_doc_filename(search_id, query):
+    return 'twitter-search-{}-{}'.format(search_id, get_doc_filename(query))
+
+
+def get_doc_filepath(filename, score):
     script_path = os.path.dirname(os.path.realpath(__file__))
     emotion = 'negative' if score < 0 else 'positive'
     return os.path.join(script_path, '..', '..', 'Texts as found input', emotion, filename)
@@ -41,7 +48,18 @@ def save_article_file(article, score):
     document = Document()
     document.add_heading(article.title, 0)
     document.add_paragraph(article.text)
-    filepath = get_article_filepath(article.title, score)
+    filename = get_doc_filename(article.title)
+    filepath = get_doc_filepath(filename, score)
+    document.save(filepath)
+
+
+def save_tweets_file(search_id, query, tweets, score):
+    document = Document()
+    document.add_heading(query, 0)
+    for tweet in tweets:
+        document.add_paragraph(tweet.text)
+    filename = get_tweets_doc_filename(search_id, query)
+    filepath = get_doc_filepath(filename, score)
     document.save(filepath)
 
 
@@ -66,14 +84,14 @@ def select_one(statement, args=tuple()):
                 return cursor.execute(statement, args).fetchone()
 
 
-def save_search_to_db(query, query_type, articles, scores, from_date=None, until_date=None):
+def save_news_search_to_db(query, articles, scores, from_date=None, until_date=None):
     with db_utils.db_connect() as conn:
         cursor = conn.cursor()
         result = cursor.execute("""
             INSERT INTO searches
             (timestamp, type, query, status, from_date, until_date)
             VALUES (?, ?, ?, ?, ?, ?)""",
-            (datetime.now(), query_type, query, 'started', from_date, until_date))
+            (datetime.now(), SEARCH_TYPE_NEWS, query, SEARCH_STATUS_STARTED, from_date, until_date))
 
         search_id = result.lastrowid
         conn.commit()
@@ -82,7 +100,7 @@ def save_search_to_db(query, query_type, articles, scores, from_date=None, until
                     a.title,
                     a.url,
                     a.publish_date,
-                    get_article_filename(a.title),
+                    get_doc_filename(a.title),
                     search_id,
                     scores[a.url]
                 ) for a in articles]
@@ -91,6 +109,34 @@ def save_search_to_db(query, query_type, articles, scores, from_date=None, until
             INSERT INTO documents
             (title, url, publish_date, filename, search_id, vader_score)
             VALUES (?, ?, ?, ?, ?, ?)""",
+            data)
+        conn.commit()
+
+        return search_id
+
+
+def save_twitter_search_to_db(query, tweets, scores):
+    with db_utils.db_connect() as conn:
+        cursor = conn.cursor()
+        result = cursor.execute("""
+            INSERT INTO searches
+            (timestamp, type, query, status)
+            VALUES (?, ?, ?, ?)""",
+            (datetime.now(), SEARCH_TYPE_TWITTER, query, SEARCH_STATUS_STARTED))
+
+        search_id = result.lastrowid
+        conn.commit()
+
+        filename = get_tweets_doc_filename(search_id, query)
+        execute_statement(
+                'UPDATE searches SET filename = ? WHERE id = ?',
+                (filename, search_id))
+
+        data = [(t.id, t.text, t.created_at, search_id, scores[t.id]) for t in tweets]
+        cursor.executemany("""
+            INSERT INTO tweets
+            (tweet_id, text, created_at, search_id, vader_score)
+            VALUES (?, ?, ?, ?, ?)""",
             data)
         conn.commit()
 
@@ -115,6 +161,12 @@ def update_search_status(search_id, status):
             (status, search_id))
 
 
+def update_search_biphone_score(search_id, score):
+    execute_statement(
+            'UPDATE searches SET biphone_score = ? WHERE id = ?',
+            (score, search_id))
+
+
 def get_searches():
     return select_many('SELECT * FROM searches ORDER BY timestamp DESC')
 
@@ -123,11 +175,19 @@ def get_search(id):
     return select_one('SELECT * FROM searches WHERE id = ?', (id,))
 
 
+def get_tweets(search_id):
+    return select_many(
+            'SELECT * FROM tweets WHERE search_id = ? ORDER BY created_at DESC',
+            (search_id,))
+
+
 def read_document(title, score):
-    filepath = get_article_filepath(title, score)
+    filename = get_doc_filename(title)
+    filepath = get_doc_filepath(filename, score)
     doc = Document(filepath)
     paragraphs = []
     for paragraph in doc.paragraphs:
         if paragraph:
             paragraphs += [p for p in paragraph.text.split('\n') if p != '']
     return paragraphs
+

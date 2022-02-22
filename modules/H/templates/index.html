@@ -67,9 +67,13 @@
                 </form>
                 {% if tweets is defined and tweets|length > 0 %}
                   <div id="results">
+                    <div class="alert alert-primary" role="alert">
+                      Note that biphone-based scoring takes more time to calculate. Once the calculation completes, this score will be available in the <a href="/searches">search history</a> page.
+                    </div>
                     <table class="table" id="statistics">
                       <thead>
                         <tr>
+                          <th scope="col">Scoring type</th>
                           <th scope="col">Mean score</th>
                           <th scope="col">Median score</th>
                           <th scope="col">Standard deviation</th>
@@ -77,6 +81,7 @@
                       </thead>
                       <tbody>
                         <tr>
+                          <td>Vader score:</td>
                           <td>{{ mean_sentiment_score }}</td>
                           <td>{{ median_sentiment_score }}</td>
                           <td>{{ std_dev_sentiment_scores }}</td>
