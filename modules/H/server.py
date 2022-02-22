@@ -65,7 +65,7 @@ def search_news():
                     article, score = future.result()
                     articles.append(article)
                     sentiment_scores[article.url] = score
-                except e:
+                except Exception as e:
                     # TODO
                     print(e)
 
