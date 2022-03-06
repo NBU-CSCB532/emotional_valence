@@ -25,3 +25,26 @@ python -c "import nltk; nltk.download('punkt')"
 python -c "from database import db_utils; db_utils.init_database()"
 ```
 
+## Web client
+To use the web client (module H) you need to do the following:
+
+You need to create a [Twitter developer account](https://developer.twitter.com) and a [Newsapi account](https://newsapi.org/).
+
+Before starting the app you need to set the following environment variables:
+
+```bash
+export TWITTER_CONSUMER_KEY=<secret>
+export TWITTER_BEARER_TOKEN=<secret>
+export TWITTER_CONSUMER_SECRET=<secret>
+export NEWS_API_KEY=<secret>
+```
+
+Then you can start the app:
+
+```bash
+python3 server.py
+```
+
+## Production
+
+Make sure to set the SECRET_KEY env variable to a truly secret value!

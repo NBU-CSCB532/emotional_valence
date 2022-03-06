@@ -1,6 +1,9 @@
 from flask import Flask
 from flask import render_template
 from flask import request
+from flask import redirect
+from flask import send_from_directory
+from flask import flash
 
 import validators
 import concurrent.futures
@@ -12,19 +15,15 @@ from . import sentiment
 from . import utils
 
 import time
+import os
+
+TEMPLATE_KEYWORDS_FILE = 'KeyWords_template.xlsx'
+KEYWORDS_FILE = 'KeyWords.xlsx'
+ALLOWED_EXTENSIONS = {'xlsx'}
 
 app = Flask(__name__)
-
-
-def get_article_with_score(url):
-    article = news.get_article(url)
-    score = sentiment.vader_sentiment(article.text)
-    return (article, score)
-
-
-def score_tweet(tweet):
-    score = sentiment.vader_sentiment(tweet.text)
-    return (tweet, score)
+# WARNING: this env variable should be set to a truly secret value on production
+app.secret_key = os.environ.get('SECRET_KEY', 'dev')
 
 
 @app.route('/')
@@ -44,7 +43,7 @@ def search_news():
     sentiment_scores = {}
 
     if validators.url(query):
-        article, score = get_article_with_score(query)
+        article, score = news.get_article_with_score(query)
         articles = [article]
         sentiment_scores[article.url] = score
     else:
@@ -58,7 +57,7 @@ def search_news():
             futures = []
 
             for article_summary in articles_list:
-                futures.append(executor.submit(get_article_with_score, article_summary['url']))
+                futures.append(executor.submit(news.get_article_with_score, article_summary['url']))
 
             for future in concurrent.futures.as_completed(futures):
                 try:
@@ -102,7 +101,7 @@ def search_tweets():
         futures = []
 
         for tweet in tweets:
-            futures.append(executor.submit(score_tweet, tweet))
+            futures.append(executor.submit(twitter.score_tweet, tweet))
 
         for future in concurrent.futures.as_completed(futures):
             try:
@@ -166,6 +165,7 @@ def show_news_search(search):
             biphone_median_sentiment_score=biphone_median_score,
             biphone_std_dev_sentiment_scores=biphone_std_dev)
 
+
 def show_twitter_search(search):
     search_id = search[0]
 
@@ -198,6 +198,41 @@ def show_search(id):
     else:
         return show_twitter_search(search)
 
+
+@app.route('/template-keywords-file')
+def get_template_keywords_file():
+    directory = os.path.join(app.root_path, '..', '..', 'Texts as found input')
+    return send_from_directory(directory, TEMPLATE_KEYWORDS_FILE, as_attachment=True)
+
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@app.route('/upload-keywords-file', methods=['POST'])
+def upload_keywords_file():
+        if 'file' not in request.files:
+            flash('No file part')
+            return redirect(request.url)
+        file = request.files['file']
+        # If the user does not select a file, the browser submits an
+        # empty file without a filename.
+        if file.filename == '':
+            flash('No file selected')
+            return redirect(request.url)
+        if file and allowed_file(file.filename):
+            directory = os.path.join(app.root_path, '..', '..', 'Texts as found input')
+            file.save(os.path.join(directory, KEYWORDS_FILE))
+            flash('Keywords file was updated!')
+            return render_template('index.html', search_type='batch')
+
+
+@app.route('/batch-search', methods=['POST'])
+def batch_search():
+    sentiment.run_batch_news_biphone_scoring()
+    flash('Batch search started. This will take a while... You will find the results in the search history.')
+    return render_template('index.html', search_type='batch')
 
 if __name__ == '__main__':
     app.run(debug=True)

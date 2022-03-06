@@ -17,3 +17,8 @@ def search_tweets(query, limit=250):
             ).flatten(limit=limit)
     return list(tweets)
 
+
+def score_tweet(tweet):
+    score = sentiment.vader_sentiment(tweet.text)
+    return (tweet, score)
+

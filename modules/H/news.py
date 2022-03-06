@@ -3,6 +3,8 @@ import os
 import math
 from newspaper import Article
 
+from . import sentiment
+
 
 NEWS_API_SEARCH_URL = "https://newsapi.org/v2/everything"
 NEWS_API_KEY=os.environ['NEWS_API_KEY']
@@ -50,6 +52,12 @@ def get_article(url):
     article.download()
     article.parse()
     return article
+
+
+def get_article_with_score(url):
+    article = get_article(url)
+    score = sentiment.vader_sentiment(article.text)
+    return (article, score)
 
 
 if __name__ == '__main__':
