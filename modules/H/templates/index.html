@@ -97,7 +97,7 @@
                       </thead>
                       <tbody>
                         <tr>
-                          <td>Vader score:</td>
+                          <td>VADER score:</td>
                           <td>{{ mean_sentiment_score }}</td>
                           <td>{{ median_sentiment_score }}</td>
                           <td>{{ std_dev_sentiment_scores }}</td>
@@ -196,10 +196,10 @@
                         </thead>
                         <tbody>
                           <tr>
-                            <td>Vader score:</td>
-                            <td>{{ mean_sentiment_score }}</td>
-                            <td>{{ median_sentiment_score }}</td>
-                            <td>{{ std_dev_sentiment_scores }}</td>
+                            <td>VADER score:</td>
+                            <td>{{ mean_sentiment_score | round(2) }}</td>
+                            <td>{{ median_sentiment_score | round(2) }}</td>
+                            <td>{{ std_dev_sentiment_scores | round(2) }}</td>
                           </tr>
                         </tbody>
                       </table>
@@ -222,7 +222,7 @@
                               {{ article.url }} <br/>
                               {{ article.publish_date }} <br/>
                               <br/>
-                              Vader score: {{ sentiment_scores.get(article.url) }}
+                              VADER score: {{ sentiment_scores.get(article.url) | round(2) }}
                             </center>
                             <hr/>
                             {{ article.text }}

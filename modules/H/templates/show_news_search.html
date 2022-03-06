@@ -46,6 +46,7 @@
             <div id="results">
               <center>
                 <h3>Query: {{ search[3] }}</h3><br/>
+                Status: {{ search[4] }}<br/>
                 Type: {{ search[2] }}<br/>
                 Timestamp: {{ search[1].split('.')[0] }}<br/>
               </center>
@@ -64,19 +65,34 @@
                   </thead>
                   <tbody>
                     <tr>
-                      <td>Vader score</td>
-                      <td>{{ vader_mean_sentiment_score }}</td>
-                      <td>{{ vader_median_sentiment_score }}</td>
-                      <td>{{ vader_std_dev_sentiment_scores }}</td>
+                      <td>VADER score</td>
+                      <td>{{ vader_mean_sentiment_score | round(2) }}</td>
+                      <td>{{ vader_median_sentiment_score | round(2) }}</td>
+                      <td>{{ vader_std_dev_sentiment_scores | round(2) }}</td>
                     </tr>
                     <tr>
                       <td>Biphone score</td>
-                      <td>{{ biphone_mean_sentiment_score }}</td>
-                      <td>{{ biphone_median_sentiment_score }}</td>
-                      <td>{{ biphone_std_dev_sentiment_scores }}</td>
+                      <td>
+                        {% if biphone_mean_sentiment_score is not none %}
+                          {{ biphone_mean_sentiment_score | round(2) }}
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if biphone_median_sentiment_score is not none %}
+                          {{ biphone_median_sentiment_score | round(2) }}
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if biphone_std_dev_sentiment_scores is not none %}
+                          {{ biphone_std_dev_sentiment_scores | round(2) }}
+                        {% endif %}
+                      </td>
                     </tr>
                   </tbody>
                 </table>
+
+                Correlation between VADER and Biphone scoring: {{ correlation | round(2) }}<br/>
+                <hr/>
 
                 <nav aria-label="Articles navigation" style="margin-bottom: 30px;">
                   <ul id="articles-pagination" class="pagination justify-content-center">
@@ -93,11 +109,16 @@
                     <div id="article-{{ loop.index }}" class="article-content" style="display: none">
                       <center>
                         <h4>{{ article[1] }}</h4><br/>
-                        {{ article[2] }} <br/>
-                        {{ article[3] }} <br/>
+                        <a href="{{ article[2] }}">{{ article[2] }}</a><br/>
+                        {% if article[3] is not none %}
+                          {{ article[3].split('.')[0] }} <br/>
+                        {% endif %}
                         <br/>
-                        Vader score: {{ article[6] }}<br/>
-                        Biphone score: {{ article[7] }}
+                        VADER score: {{ article[6] | round(2) }}<br/>
+                        Biphone score:
+                        {% if article[7] is not none %}
+                          {{ article[7] | round(2) }}
+                        {% endif %}
                       </center>
                       <hr/>
                       {% for paragraph in document_texts[article[1]] %}

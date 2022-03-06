@@ -7,6 +7,7 @@ from flask import flash
 
 import validators
 import concurrent.futures
+import scipy.stats
 import statistics
 
 from . import news
@@ -125,9 +126,9 @@ def search_tweets():
             tweets=tweets,
             form=request.form,
             sentiment_scores=sentiment_scores,
-            mean_sentiment_score=mean_score,
-            median_sentiment_score=median_score,
-            std_dev_sentiment_scores=std_dev
+            mean_sentiment_score=round(mean_score, 2),
+            median_sentiment_score=round(median_score, 2),
+            std_dev_sentiment_scores=round(std_dev, 2)
             )
 
 
@@ -141,15 +142,21 @@ def show_news_search(search):
     search_id = search[0]
     documents = list(utils.get_documents_for_search(search_id))
 
-    vader_scores = [d[6] for d in documents if d[6]]
-    biphone_scores = [d[7] for d in documents if d[7]]
+    vader_scores = [d[6] for d in documents]
+    biphone_scores = [d[7] for d in documents]
+
+    correlation = scipy.stats.pearsonr(vader_scores, biphone_scores)[0]
+
+    # remove None values
+    vader_scores = [x for x in vader_scores if x]
+    biphone_scores = [x for x in biphone_scores if x]
 
     vader_mean_score = statistics.mean(vader_scores)
     vader_median_score = statistics.median(vader_scores)
     vader_std_dev = statistics.stdev(vader_scores) if len(vader_scores) > 1 else None
 
-    biphone_mean_score = statistics.mean(biphone_scores)
-    biphone_median_score = statistics.median(biphone_scores)
+    biphone_mean_score = statistics.mean(biphone_scores) if len(biphone_scores) > 1 else None
+    biphone_median_score = statistics.median(biphone_scores) if len(biphone_scores) > 1 else None
     biphone_std_dev = statistics.stdev(biphone_scores) if len(biphone_scores) > 1 else None
 
     document_texts = {doc[1]: utils.read_document(doc[1], doc[6]) for doc in documents}
@@ -163,7 +170,8 @@ def show_news_search(search):
             vader_std_dev_sentiment_scores=vader_std_dev,
             biphone_mean_sentiment_score=biphone_mean_score,
             biphone_median_sentiment_score=biphone_median_score,
-            biphone_std_dev_sentiment_scores=biphone_std_dev)
+            biphone_std_dev_sentiment_scores=biphone_std_dev,
+            correlation=correlation)
 
 
 def show_twitter_search(search):

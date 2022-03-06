@@ -1,6 +1,8 @@
 import os
 import tweepy
 
+from . import sentiment
+
 client = tweepy.Client(
         consumer_key=os.environ['TWITTER_CONSUMER_KEY'],
         consumer_secret=os.environ['TWITTER_CONSUMER_SECRET'],

@@ -67,9 +67,9 @@
                   <tbody>
                     <tr>
                       <td>Vader score</td>
-                      <td>{{ vader_mean_sentiment_score }}</td>
-                      <td>{{ vader_median_sentiment_score }}</td>
-                      <td>{{ vader_std_dev_sentiment_scores }}</td>
+                      <td>{{ vader_mean_sentiment_score | round(2) }}</td>
+                      <td>{{ vader_median_sentiment_score | round(2) }}</td>
+                      <td>{{ vader_std_dev_sentiment_scores | round(2) }}</td>
                       <td>N/a</td>
                     </tr>
                     <tr>
@@ -77,7 +77,11 @@
                       <td>N/a</td>
                       <td>N/a</td>
                       <td>N/a</td>
-                      <td>{{ biphone_score }}</td>
+                      <td>
+                        {% if biphone_score is not none %}
+                          {{ biphone_score | round(2) }}
+                        {% endif %}
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -105,7 +109,7 @@
                             {{ tweet[2] }}
                           </td>
                           <td>
-                            {{ tweet[5] }}
+                            {{ tweet[5] | round(2) }}
                           </td>
                         </tr>
                       {% endfor %}
