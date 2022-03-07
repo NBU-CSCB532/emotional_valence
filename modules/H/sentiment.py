@@ -115,37 +115,6 @@ def run_twitter_biphone_scoring(search_id):
     executor.submit(twitter_biphone_scoring, search_id)
 
 
-def batch_news_biphone_scoring(search_id):
-    with ILock('biphone_scoring_web'):
-        try:
-            print("Biphone scoring started!")
-
-            main(no_cleaning=True)
-
-            print("Biphone scoring completed! Will run post-scoring procedure now.")
-
-            print('Updating documents in database')
-
-            documents = utils.get_documents_for_search(search_id)
-            for document in documents:
-                doc_id = document[0];
-                title = utils.slugify(document[1]);
-                score = get_biphone_score_for_article(title)
-                utils.update_document_biphone_score(doc_id, score)
-
-            print('Updating the search status')
-            utils.update_search_status(search_id, SEARCH_STATUS_COMPLETED)
-
-            print('Done')
-        except Exception as e:
-            print(e)
-            utils.update_search_status(search_id, SEARCH_STATUS_ERROR)
-
-
-def run_news_biphone_scoring(search_id):
-    executor.submit(news_biphone_scoring, search_id)
-
-
 def batch_news_biphone_scoring():
     with ILock('biphone_scoring_web'):
         print("Starting batch news biphone scoring!")
